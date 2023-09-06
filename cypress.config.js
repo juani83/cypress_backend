@@ -1,5 +1,6 @@
 const { defineConfig } = require("cypress");
 const mysql = require("mysql");
+const { MongoClient } = require("mongodb");
 
 function queryTestDb(query, config) {
   const connection = mysql.createConnection(config.env.db);
@@ -16,15 +17,32 @@ function queryTestDb(query, config) {
   });
 }
 
+async function connect(client){
+  await client.connect();
+  return client.db("sample_airbnb");
+}
+
 module.exports = defineConfig({
   e2e: {
-    setupNodeEvents(on, config) {
+    async setupNodeEvents(on, config) {
       // implement node event listeners here
+      const client = new MongoClient(config.env.mongo);
       on("task",{
         queryDb: (query) => {
           return queryTestDb(query, config);
+        },
+        async getListing() {
+          try{
+            const db = await connect(client);
+            const listingsAndReviews = db.collection("listingsAndReviews");
+            return await listingsAndReviews.find({}).limit(10).toArray();
+          }catch(e){
+            console.error(e);
+          }finally{
+            await client.close();
+          }
         }
-      })
+      });
     },
     baseUrl: "http://localhost:3000",
   },
