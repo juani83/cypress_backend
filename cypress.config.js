@@ -19,7 +19,7 @@ function queryTestDb(query, config) {
 
 async function connect(client){
   await client.connect();
-  return client.db("sample_airbnb");
+  return client.db("sample_guides");
 }
 
 module.exports = defineConfig({
@@ -34,8 +34,30 @@ module.exports = defineConfig({
         async getListing() {
           try{
             const db = await connect(client);
-            const listingsAndReviews = db.collection("listingsAndReviews");
-            return await listingsAndReviews.find({}).limit(10).toArray();
+            const planets = db.collection("planets");
+            return await planets.find({}).limit(10).toArray();
+          }catch(e){
+            console.error(e);
+          }finally{
+            await client.close();
+          }
+        },
+        async createPlanet(planet) {
+          try{
+            const db = await connect(client);
+            const planets = db.collection("planets");
+            return await planets.insertOne(planet);
+          }catch(e){
+            console.error(e);
+          }finally{
+            await client.close();
+          }
+        },
+        async clearPlanets() {
+          try{
+            const db = await connect(client);
+            const planets = db.collection("planets");
+            return await planets.deleteMany({});
           }catch(e){
             console.error(e);
           }finally{
